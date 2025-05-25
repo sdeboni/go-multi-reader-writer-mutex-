@@ -2,20 +2,19 @@ package paasio
 
 import (
   "io"
-  "sync"
+  "sync/atomic"
+  "time"
+  "math/rand"
+  "math"
 )
 
 type readCounter struct {
   reader io.Reader
-  bytesRead int64
-  callCount int
-  mu sync.RWMutex
+  counter atomic.Uint64
 }
 type writeCounter struct {
   writer io.Writer
-  bytesWritten int64
-  callCount int
-  mu sync.RWMutex
+  counter atomic.Uint64
 }
 
 type readWriteCounter struct {
@@ -42,40 +41,103 @@ func NewReadWriteCounter(readwriter io.ReadWriter) ReadWriteCounter {
   }
 }
 
+func (rc *readCounter) updateCounter(bytes int) {
+  success := false
+  patience := 1000
+
+  for !success && patience > 0 {
+    patience--
+
+    oldCounter := rc.counter.Load()
+
+    bytesRead := oldCounter >> 32
+    callCount := oldCounter & uint64(math.MaxUint32)
+
+    bytesRead += uint64(bytes)
+
+    if (bytesRead > math.MaxUint32) {
+      panic("overflow")
+    }
+    callCount++
+
+    newCounter := (bytesRead << 32) + callCount
+
+    success = rc.counter.CompareAndSwap(oldCounter, newCounter) 
+    if !success {
+      n := rand.Intn(10)
+      time.Sleep(time.Duration(n)*time.Nanosecond)
+    }
+  } 
+  if patience == 0 {
+    panic("too many update conflicts")
+  }
+}
+
 func (rc *readCounter) Read(p []byte) (int, error) {
   bytesRead, err := rc.reader.Read(p)
 
-  rc.mu.Lock()
-  defer rc.mu.Unlock()
+  rc.updateCounter(bytesRead) 
 
-  rc.callCount++
-  rc.bytesRead += int64(bytesRead)
   return bytesRead, err
 }
 
 func (rc *readCounter) ReadCount() (int64, int) {
-  rc.mu.RLock()
-  defer rc.mu.RUnlock()
+  counter := rc.counter.Load();
 
-  return rc.bytesRead, rc.callCount
+  bytesRead := int64(counter >> 32)
+  callCount := int(counter & math.MaxUint32)
+
+  return bytesRead, callCount
+}
+
+
+func (wc *writeCounter) updateCounter(bytes int) {
+  success := false
+  patience := 1000
+
+  for !success && patience > 0 {
+    patience--
+
+    oldCounter := wc.counter.Load()
+
+    bytesWritten := oldCounter >> 32
+    callCount := oldCounter & uint64(math.MaxUint32)
+
+    bytesWritten += uint64(bytes)
+
+    if (bytesWritten > math.MaxUint32) {
+      panic("overflow")
+    }
+    callCount++
+
+    newCounter := (bytesWritten << 32) + callCount
+
+    success = wc.counter.CompareAndSwap(oldCounter, newCounter) 
+    if !success {
+      n := rand.Intn(10)
+      time.Sleep(time.Duration(n)*time.Nanosecond)
+    }
+  } 
+  if patience == 0 {
+    panic("too many update conflicts")
+  }
 }
 
 func (wc *writeCounter) Write(p []byte) (int, error) {
   bytesWritten, err := wc.writer.Write(p)
 
-  wc.mu.Lock()
-  defer wc.mu.Unlock()
+  wc.updateCounter(bytesWritten)
 
-  wc.callCount++
-  wc.bytesWritten += int64(bytesWritten)
   return bytesWritten, err
 }
 
 func (wc *writeCounter) WriteCount() (int64, int) {
-  wc.mu.RLock()
-  wc.mu.RUnlock()
+  counter := wc.counter.Load();
 
-  return wc.bytesWritten, wc.callCount
+  bytesWritten := int64(counter >> 32)
+  callCount := int(counter & math.MaxUint32)
+
+  return bytesWritten, callCount
 }
 
 func (rwc *readWriteCounter) Read(p []byte) (int, error) {
