@@ -1,4 +1,4 @@
-package paasio
+package atomic
 
 import (
   "io"
@@ -6,6 +6,7 @@ import (
   "time"
   "math/rand"
   "math"
+  "paasio/paasio"
 )
 
 type readCounter struct {
@@ -18,23 +19,23 @@ type writeCounter struct {
 }
 
 type readWriteCounter struct {
-  rc ReadCounter
-  wc WriteCounter
+  rc paasio.ReadCounter
+  wc paasio.WriteCounter
 }
 
-func NewWriteCounter(writer io.Writer) WriteCounter {
+func NewWriteCounter(writer io.Writer) paasio.WriteCounter {
   return &writeCounter {
     writer: writer,
   }
 }
 
-func NewReadCounter(reader io.Reader) ReadCounter {
+func NewReadCounter(reader io.Reader) paasio.ReadCounter {
   return &readCounter {
     reader: reader,
   }
 }
 
-func NewReadWriteCounter(readwriter io.ReadWriter) ReadWriteCounter {
+func NewReadWriteCounter(readwriter io.ReadWriter) paasio.ReadWriteCounter {
   return &readWriteCounter {
     NewReadCounter(readwriter),
     NewWriteCounter(readwriter),
