@@ -1,4 +1,4 @@
-package atomic2
+package mrwmutex
  
 import (
   "math"

@@ -45,13 +45,12 @@ Brian Matsuo - https://github.com/bmatsuo
 
 
 Benchmark comparison between implementations: Mutex, RWMutex, Atomic, MultiRWMutex
+ReadMutex-16            	     382	   3148276 ns/op
+ReadRWMutex-16          	     338	   3504227 ns/op
+ReadAtomic-16           	     396	   2975656 ns/op
+ReadMultiRWMutex-16     	     402	   2942809 ns/op
 
-ReadTotalMutex-16       	     356	   3395499 ns/op
-ReadTotalRWMutex-16     	     333	   3515038 ns/op
-ReadTotalAtomic-16      	     385	   3027096 ns/op
-ReadTotalMultiRWMutex-16   	     391	   2981718 ns/op
-
-WriteTotalMutex-16      	     373	   3200174 ns/op
-WriteTotalRWMutex-16    	     332	   3530359 ns/op
-WriteTotalAtomic-16     	     394	   2979828 ns/op
-WriteTotalMultiRWMutex-16 	     390	   2988764 ns/op
+WriteMutex-16           	     367	   3218048 ns/op
+WriteRWMutex-16         	     337	   3493808 ns/op
+WriteAtomic-16          	     387	   3035166 ns/op
+WriteMultiRWMutex-16    	     392	   2997623 ns/op
