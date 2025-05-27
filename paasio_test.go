@@ -13,17 +13,18 @@ import (
 	"paasio/rwmutex"
 	"paasio/atomic"
 	"paasio/mrwmutex"
+	"paasio/value"
 	"paasio/paasio"
 )
 
 func NewReadCounter(r io.Reader) paasio.ReadCounter {
-  return mrwmutex.NewReadCounter(r)
+  return value.NewReadCounter(r)
 }
 func NewWriteCounter(w io.Writer) paasio.WriteCounter {
-  return mrwmutex.NewWriteCounter(w)
+  return value.NewWriteCounter(w)
 }
 func NewReadWriteCounter(rw io.ReadWriter) paasio.ReadWriteCounter {
-  return mrwmutex.NewReadWriteCounter(rw)
+  return value.NewReadWriteCounter(rw)
 }
 
 func TestMultiThreaded(t *testing.T) {
@@ -319,6 +320,9 @@ func BenchmarkReadAtomic(b *testing.B) {
 func BenchmarkReadMultiRWMutex(b *testing.B) {
   testReadBench(b, mrwmutex.NewReadCounter)
 }
+func BenchmarkReadValue(b *testing.B) {
+  testReadBench(b, value.NewReadCounter)
+}
 
 func BenchmarkWriteMutex(b *testing.B) {
   testWriteBench(b, mutex.NewWriteCounter)
@@ -331,6 +335,9 @@ func BenchmarkWriteAtomic(b *testing.B) {
 }
 func BenchmarkWriteMultiRWMutex(b *testing.B) {
   testWriteBench(b, mrwmutex.NewWriteCounter)
+}
+func BenchmarkWriteValue(b *testing.B) {
+  testWriteBench(b, value.NewWriteCounter)
 }
 
 
